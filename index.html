@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* (Previous CSS code) */
+
+        #display-options-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        #display-options-container select {
+            width: 45%;
+        }
+
+        #display-options-container button {
+            width: 5%;
+            margin: 0 2%;
+        }
+
+        #selected-fields-list {
+            margin-top: 10px;
+        }
+    </style>
+    <title>Product Data </title>
+</head>
+<body>
+    <div id="app-container">
+        <h1>Product Data </h1>
+
+        <div id="file-upload">
+            <input type="file" id="file-input" accept=".csv, .json">
+        </div>
+
+        <div id="file-details-container">
+            <h3>File Details</h3>
+            <label for="file-type">Select file type:</label>
+            <select id="file-type">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+            </select>
+            <br>
+            <label for="encoding">Enter encoding (e.g., utf-8):</label>
+            <input type="text" id="encoding" value="utf-8">
+            <br>
+            <div id="csv-details" style="display: none;">
+                <label for="delimiter">Enter delimiter:</label>
+                <input type="text" id="delimiter" value=",">
+                <br>
+                <input type="checkbox" id="has-header" checked>
+                <label for="has-header">File has header</label>
+                <br>
+            </div>
+        </div>
+
+        <div id="display-options-container">
+            <select id="available-fields" multiple></select>
+            <button id="add-button">>></button>
+            <button id="remove-button"><<</button>
+            <select id="selected-fields" multiple></select>
+        </div>
+
+        <div id="displayed-data-container">
+            <h3>Displayed Product Data</h3>
+            <div id="selected-fields-list"></div>
+            <table id="displayed-table"></table>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('file-input').addEventListener('change', handleFileUpload);
+        document.getElementById('add-button').addEventListener('click', addToDisplay);
+        document.getElementById('remove-button').addEventListener('click', removeFromDisplay);
+
+        function handleFileUpload(event) {
+            const fileInput = event.target;
+            const file = fileInput.files[0];
+
+            if (file) {
+                const fileType = document.getElementById('file-type').value;
+                const encoding = document.getElementById('encoding').value;
+
+                let delimiter = '';
+                let hasHeader = false;
+
+                if (fileType === 'csv') {
+                    delimiter = document.getElementById('delimiter').value;
+                    hasHeader = document.getElementById('has-header').checked;
+                }
+
+                loadData(file, fileType, encoding, delimiter, hasHeader);
+            }
+        }
+
+        function loadData(file, fileType, encoding, delimiter, hasHeader) {
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                const content = e.target.result;
+
+                let data;
+                if (fileType === 'json') {
+                    data = JSON.parse(content).products;
+                } else if (fileType === 'csv') {
+                  
+                }
+
+                populateDisplayOptions(data);
+                updateTable(data);
+            };
+
+            reader.readAsText(file, encoding);
+        }
+
+        function populateDisplayOptions(data) {
+        const availableFields = document.getElementById('available-fields');
+
+        // Clear existing options
+        availableFields.innerHTML = '';
+
+      
+        const productAttributes = Object.keys(data[Object.keys(data)[0]]);
+        productAttributes.forEach(attribute => {
+            availableFields.add(new Option(attribute, attribute));
+        });
+
+        updateTable(data);
+    }
+
+    function updateTable(data) {
+        const table = document.getElementById('displayed-table');
+        table.innerHTML = ''; 
+
+        const selectedFields = document.getElementById('selected-fields');
+        const selectedFieldsList = document.getElementById('selected-fields-list');
+
+
+        const headerRow = table.insertRow();
+        Object.keys(data[Object.keys(data)[0]]).forEach(key => {
+            if (selectedFields.options.namedItem(key)) {
+                const th = document.createElement('th');
+                th.textContent = key;
+                headerRow.appendChild(th);
+            }
+        });
+
+        // Create data rows
+        Object.keys(data).forEach(productId => {
+            const rowData = data[productId];
+            const row = table.insertRow();
+            Object.keys(rowData).forEach(key => {
+                if (selectedFields.options.namedItem(key)) {
+                    const cell = row.insertCell();
+                    cell.textContent = rowData[key];
+                }
+            });
+        });
+
+        // Update selected fields list
+        selectedFieldsList.innerHTML = 'Fields to Display: ';
+        for (let i = 0; i < selectedFields.options.length; i++) {
+            selectedFieldsList.innerHTML += selectedFields.options[i].text + ', ';
+        }
+        selectedFieldsList.innerHTML = selectedFieldsList.innerHTML.slice(0, -2); 
+    }
+
+        function addToDisplay() {
+            const availableFields = document.getElementById('available-fields');
+            const selectedFields = document.getElementById('selected-fields');
+
+            for (let i = 0; i < availableFields.options.length; i++) {
+                if (availableFields.options[i].selected) {
+                    selectedFields.add(new Option(availableFields.options[i].text, availableFields.options[i].value));
+                    availableFields.remove(i);
+                    i--;
+                }
+            }
+        }
+
+        function removeFromDisplay() {
+            const availableFields = document.getElementById('available-fields');
+            const selectedFields = document.getElementById('selected-fields');
+
+            for (let i = 0; i < selectedFields.options.length; i++) {
+                if (selectedFields.options[i].selected) {
+                    availableFields.add(new Option(selectedFields.options[i].text, selectedFields.options[i].value));
+                    selectedFields.remove(i);
+                    i--;
+                }
+            }
+        }
+
+
+    </script>
+</body>
+</html>
